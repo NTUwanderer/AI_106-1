@@ -176,7 +176,61 @@ def breadthFirstSearch(problem):
 def uniformCostSearch(problem):
     """Search the node of least total cost first."""
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    from util import PriorityQueue
+    start = problem.getStartState()
+    nodes = PriorityQueue()
+    indices = PriorityQueue()
+    steps = []
+    predecessors = []
+    costs = []
+    explored = set()
+    frontier = set()
+    nodes.push(start, 0)
+    indices.push(0, 0)
+    predecessors.append({'node': None, 'index': -1, 'dir': None})
+    costs.append(0)
+    frontierIndices = {}
+    frontierIndices[start] = 0
+
+    indexCounter = 1
+    while nodes.isEmpty() == False:
+        node = nodes.pop()
+        index = indices.pop()
+        cost = costs[index]
+
+        del frontierIndices[node]
+        explored.add(node)
+
+        if problem.isGoalState(node):
+            while (predecessors[index].get('node') != None):
+                predecessor = predecessors[index]
+                node = predecessor.get('node')
+                index = predecessor.get('index')
+                steps.insert(0, predecessor.get('dir'))
+            break
+
+        successors = problem.getSuccessors(node)
+        for successor in successors:
+            if successor[0] not in explored:
+                newCost = cost + successor[2]
+                if successor[0] in frontierIndices:
+                    frontierIndex = frontierIndices[successor[0]]
+                    oldCost = costs[frontierIndex]
+                    if (newCost < oldCost):
+                        nodes.update(successor[0], newCost)
+                        indices.update(frontierIndex, newCost)
+                        predecessors[frontierIndex] = {'node': node, 'index': index, 'dir': successor[1]}
+                        costs[frontierIndex] = newCost
+                else:
+                    newIndex = indexCounter
+                    indexCounter += 1
+                    nodes.push(successor[0], newCost)
+                    indices.push(newIndex, newCost)
+                    frontierIndices[successor[0]] = newIndex
+                    predecessors.append({'node': node, 'index': index, 'dir': successor[1]})
+                    costs.append(newCost)
+
+    return steps
 
 def nullHeuristic(state, problem=None):
     """
