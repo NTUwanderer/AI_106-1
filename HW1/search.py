@@ -87,7 +87,47 @@ def depthFirstSearch(problem):
     print "Start's successors:", problem.getSuccessors(problem.getStartState())
     """
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    from util import Stack
+    start = problem.getStartState()
+    nodes = Stack()
+    indices = Stack()
+    steps = []
+    predecessors = []
+    explored = set()
+    frontier = set()
+    nodes.push(start)
+    indices.push(0)
+    predecessors.append({'node': None, 'index': -1, 'dir': None})
+    frontier.add(start)
+
+    indexCounter = 1
+    while nodes.isEmpty() == False:
+        node = nodes.pop()
+        index = indices.pop()
+        explored.add(node)
+        frontier.remove(node)
+
+        if problem.isGoalState(node):
+            while (predecessors[index].get('node') != None):
+                predecessor = predecessors[index]
+                node = predecessor.get('node')
+                index = predecessor.get('index')
+                steps.insert(0, predecessor.get('dir'))
+            break
+
+        successors = problem.getSuccessors(node)
+        for successor in successors:
+            if successor[0] not in explored and successor[0] not in frontier:
+                newIndex = indexCounter
+                indexCounter += 1
+                nodes.push(successor[0])
+                indices.push(newIndex)
+                frontier.add(successor[0])
+                predecessors.append({'node': node, 'index': index, 'dir': successor[1]})
+
+
+    return steps
+    # util.raiseNotDefined()
 
 def breadthFirstSearch(problem):
     """Search the shallowest nodes in the search tree first."""
