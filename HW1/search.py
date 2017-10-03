@@ -286,7 +286,7 @@ def aStarSearch(problem, heuristic=nullHeuristic):
                     oldCost = costs[frontierIndex]
                     if (newCost < oldCost):
                         nodes.update(successor[0], newCost + heuCost)
-                        indices.udpate(frontierIndex, newCost + heuCost)
+                        indices.update(frontierIndex, newCost + heuCost)
                         predecessors[frontierIndex] = {'node': node, 'index': index, 'dir': successor[1]}
                         costs[frontierIndex] = newCost
                 else:

@@ -515,7 +515,55 @@ def foodHeuristic(state, problem):
     """
     position, foodGrid = state
     "*** YOUR CODE HERE ***"
-    return 0
+    allList = problem.start[1].asList()
+    foodGridList = foodGrid.asList()
+    
+    allIndices = []
+    for grid in foodGridList:
+        for i, pos in enumerate(allList):
+            if grid == pos:
+                allIndices.append(i)
+                break
+
+    import copy
+
+    def manhattanDis(p1, p2):
+        return abs(p1[0] - p2[0]) + abs(p1[1] - p2[1])
+
+    def findShortests(node, gridIndices):
+        shortests = []
+        shortestV = -1
+
+        for index in gridIndices:
+            dis = manhattanDis(node, allList[index])
+            if shortestV == -1 or dis < shortestV:
+                shortestV = dis
+                shortests = [index]
+            elif dis == shortestV:
+                shortests.append(index)
+
+        return shortests
+
+    def restCost(node, gridIndices):
+        if len(gridIndices) == 1:
+            return manhattanDis(node, allList[gridIndices[0]])
+        if len(gridIndices) == 0:
+            return 0
+
+        shortests = findShortests(node, gridIndices)
+        lowestCost = -1
+        for index in shortests:
+            indices = copy.copy(gridIndices)
+            indices.remove(index)
+            newNode = allList[index]
+            cost = manhattanDis(node, newNode) + restCost(newNode, indices)
+
+            if (lowestCost == -1 or cost < lowestCost):
+                lowestCost = cost
+
+        return lowestCost
+
+    return restCost(position, allIndices)
 
 class ClosestDotSearchAgent(SearchAgent):
     "Search for all food using a sequence of searches"
