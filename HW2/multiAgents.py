@@ -72,13 +72,103 @@ class ReflexAgent(Agent):
         newFood = successorGameState.getFood()
         newGhostStates = successorGameState.getGhostStates()
         newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]
-        print 'info: ', newPos
-        print 'newFood', newFood
-        print 'newGhostStates[0]: ', newGhostStates[0].getPosition()
-        print 'newScaredTimes: ', newScaredTimes
 
+        finalWeight = 1000
+        dangerousWeight = 800
+        eatGhostWeight = 300
+        expEatWeight = 200
+        eatFoodWeight = 100
+        distWeight = 1
+
+        width = newFood.width
+        height = newFood.height
+
+        safeDis = min(min(5, width - 2), height - 2)
+        maxLength = width + height - 4
         "*** YOUR CODE HERE ***"
-        return successorGameState.getScore()
+        if successorGameState.isLose():
+            return successorGameState.getScore() - finalWeight * maxLength
+
+        if successorGameState.isWin():
+            return successorGameState.getScore() + finalWeight * maxLength
+
+        oldGhostStates = currentGameState.getGhostStates()
+        oldScaredTimes = [ghostState.scaredTimer for ghostState in currentGameState.getGhostStates()]
+
+        sumOfTimes = 0
+        for time in newScaredTimes:
+            sumOfTimes += time
+
+        delta = 0
+
+        if len(oldGhostStates) < len(newGhostStates):
+            delta += (len(newScaredTimes) - len(oldScaredTimes)) * eatGhostWeight * maxLength
+        else:
+            for i in range(len(oldGhostStates)):
+                dis = manhattanDistance(oldGhostStates[i].getPosition(), newGhostStates[i].getPosition())
+                if oldScaredTimes[i] != 0 and dis > 1:
+                    delta += eatGhostWeight * maxLength
+
+        trueDis = [[maxLength for x in range(height)] for y in range(width)] 
+
+        trueDis[newPos[0]][newPos[1]] = 0
+
+        oldList = [newPos]
+        newList = []
+        
+        counter = 1
+        while len(oldList) > 0:
+            for pos1 in oldList:
+                cands = [(pos1[0]-1, pos1[1]), (pos1[0]+1, pos1[1]), (pos1[0], pos1[1]-1), (pos1[0], pos1[1]+1)]
+                for cand in cands:
+                    if not (successorGameState.hasWall(cand[0], cand[1])) and counter < trueDis[cand[0]][cand[1]]:
+                        newList.append(cand)
+                        trueDis[cand[0]][cand[1]] = counter
+
+
+            counter += 1
+            oldList = newList
+            newList = []
+
+        temp = 0
+
+        for i in range(len(newGhostStates)):
+            pos = newGhostStates[i].getPosition()
+            x = int(pos[0])
+            y = int(pos[1])
+            dis = trueDis[x][y]
+            if (newScaredTimes[i] >= 2 * dis):
+                value = expEatWeight * (maxLength - dis)
+                if (value >= temp):
+                    temp = value
+        delta += temp
+
+        temp = maxLength
+        for i in range(len(newGhostStates)):
+            if newScaredTimes[i] > 0:
+                continue
+            pos = newGhostStates[i].getPosition()
+            x = int(pos[0])
+            y = int(pos[1])
+            dis = trueDis[x][y]
+            if (temp > dis):
+                temp = dis
+            
+        if temp < safeDis:
+            delta -= (safeDis - temp) * dangerousWeight * maxLength / safeDis
+
+        if currentGameState.hasFood(newPos[0], newPos[1]):
+            delta += eatFoodWeight * maxLength
+        
+        minDis = maxLength
+        for food in newFood.asList():
+            dis = trueDis[food[0]][food[1]]
+            if (dis < minDis):
+                minDis = dis
+
+        delta += distWeight * (maxLength - dis)
+
+        return successorGameState.getScore() + delta
 
 def scoreEvaluationFunction(currentGameState):
     """
