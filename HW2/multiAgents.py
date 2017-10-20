@@ -95,10 +95,6 @@ class ReflexAgent(Agent):
         oldGhostStates = currentGameState.getGhostStates()
         oldScaredTimes = [ghostState.scaredTimer for ghostState in currentGameState.getGhostStates()]
 
-        sumOfTimes = 0
-        for time in newScaredTimes:
-            sumOfTimes += time
-
         delta = 0
 
         if len(oldGhostStates) < len(newGhostStates):
@@ -332,6 +328,8 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
             extremePair = None
             isMax = (agentIndex == 0)
             for action in actions:
+                if action == 'Stop':
+                    continue
                 newGameState = gameState.generateSuccessor(agentIndex, action)
                 pair = myGetAction(newGameState, newDepth, newIndex)
 
@@ -356,7 +354,111 @@ def betterEvaluationFunction(currentGameState):
       DESCRIPTION: <write something here so we know what you did>
     """
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    cPos = currentGameState.getPacmanPosition()
+    cFood = currentGameState.getFood()
+    cCapsules = currentGameState.getCapsules()
+    ghostStates = currentGameState.getGhostStates()
+    scaredTimes = [ghostState.scaredTimer for ghostState in ghostStates]
+
+    maxScaredTime = 40
+    finalWeight = 1000
+    dangerousWeight = 600
+    eatGhostWeight = 200
+    expEatWeight = 150
+    eatFoodWeight = 10
+    distWeight = 1
+
+    width = cFood.width
+    height = cFood.height
+
+    safeDis = min(min(3, width - 2), height - 2)
+    maxLength = width + height - 4
+    if currentGameState.isLose():
+        return currentGameState.getScore() - finalWeight
+
+    if currentGameState.isWin():
+        return currentGameState.getScore() + finalWeight
+
+    delta = 0
+
+    trueDis = [[maxLength for x in range(height)] for y in range(width)] 
+
+    trueDis[cPos[0]][cPos[1]] = 0
+
+    oldList = [cPos]
+    newList = []
+    
+    counter = 1
+    while len(oldList) > 0:
+        for pos1 in oldList:
+            cands = [(pos1[0]-1, pos1[1]), (pos1[0]+1, pos1[1]), (pos1[0], pos1[1]-1), (pos1[0], pos1[1]+1)]
+            for cand in cands:
+                if not (currentGameState.hasWall(cand[0], cand[1])) and counter < trueDis[cand[0]][cand[1]]:
+                    newList.append(cand)
+                    trueDis[cand[0]][cand[1]] = counter
+
+
+        counter += 1
+        oldList = newList
+        newList = []
+
+    temp = 0
+
+    distances = []
+    for i in range(len(ghostStates)):
+        pos = ghostStates[i].getPosition()
+        x = int(pos[0])
+        y = int(pos[1])
+        dis = trueDis[x][y]
+        distances.append(dis)
+        if scaredTimes[i] >= 2 * dis:
+            value = 1.0 * expEatWeight * (scaredTimes[i] - 2 * dis) / scaredTimes[i]
+            if (value >= temp):
+                temp = value
+    delta += temp
+
+    temp = maxLength
+    for i in range(len(ghostStates)):
+        pos = ghostStates[i].getPosition()
+        x = int(pos[0])
+        y = int(pos[1])
+        dis = trueDis[x][y]
+
+        if scaredTimes[i] <= 2 * dis and temp > dis:
+            temp = dis
+        
+    if temp < safeDis:
+        delta -= 1.0 * (safeDis - temp) * dangerousWeight / safeDis
+
+    minDis = maxLength
+    minDis2 = maxLength
+    for food in cFood.asList():
+        dis = trueDis[food[0]][food[1]]
+        if (dis < minDis):
+            minDis2 = minDis
+            minDis = dis
+
+    delta += 1.0 * distWeight * (maxLength - dis) / maxLength
+    delta += 1.0 * distWeight / 2 * (maxLength - dis) / maxLength
+
+    minDis = maxLength
+    for capsule in cCapsules:
+        dis = trueDis[capsule[0]][capsule[1]]
+        if (dis < minDis):
+            minDis = dis
+    
+    remainDis = maxScaredTime - 2 * minDis
+
+    distances.sort()
+    for dis in distances:
+        if 2 * dis <= remainDis:
+            remainDis -= 2 * dis
+            delta += 1.0 * expEatWeight / 2 * remainDis / maxScaredTime
+            break
+        
+        
+
+    return currentGameState.getScore() + delta
 
 # Abbreviation
 better = betterEvaluationFunction
