@@ -238,8 +238,6 @@ class MinimaxAgent(MultiAgentSearchAgent):
                 newIndex = agentIndex + 1
                 newDepth = depth
 
-            values = []
-            
             extremePair = None
             isMax = (agentIndex == 0)
             for action in actions:
@@ -281,8 +279,6 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
                 newIndex = agentIndex + 1
                 newDepth = depth
 
-            values = []
-            
             extremePair = None
             isMax = (agentIndex == 0)
             for action in actions:
@@ -319,7 +315,38 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
           legal moves.
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        def myGetAction(gameState, depth, agentIndex):
+            if depth == 0:
+                return (None, self.evaluationFunction(gameState))
+
+            actions = gameState.getLegalActions(agentIndex)
+
+            if agentIndex == gameState.getNumAgents() - 1:
+                newIndex = 0
+                newDepth = depth - 1
+            else:
+                newIndex = agentIndex + 1
+                newDepth = depth
+
+            totalValue = float(0.0)
+            extremePair = None
+            isMax = (agentIndex == 0)
+            for action in actions:
+                newGameState = gameState.generateSuccessor(agentIndex, action)
+                pair = myGetAction(newGameState, newDepth, newIndex)
+
+                if extremePair == None or (isMax and pair[1] > extremePair[1]) or (not isMax):
+                    extremePair = (action, pair[1])
+                    totalValue += pair[1]
+
+            if extremePair == None:
+                return (None, self.evaluationFunction(gameState))
+            if not isMax:
+                extremePair = (extremePair[0], totalValue / len(actions))
+
+            return extremePair
+
+        return myGetAction(gameState, self.depth, 0)[0]
 
 def betterEvaluationFunction(currentGameState):
     """
