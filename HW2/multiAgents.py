@@ -328,8 +328,6 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
             extremePair = None
             isMax = (agentIndex == 0)
             for action in actions:
-                if action == 'Stop':
-                    continue
                 newGameState = gameState.generateSuccessor(agentIndex, action)
                 pair = myGetAction(newGameState, newDepth, newIndex)
 
