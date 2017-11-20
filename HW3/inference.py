@@ -272,6 +272,10 @@ class ParticleFilter(InferenceModule):
         weight with each position) is incorrect and may produce errors.
         """
         "*** YOUR CODE HERE ***"
+        beliefs = util.Counter()
+        for p in self.legalPositions: beliefs[p] = 1.0
+        beliefs.normalize()
+        self.samples = [util.sample(beliefs, self.legalPositions) for i in range(self.numParticles) ]
 
     def observe(self, observation, gameState):
         """
@@ -304,7 +308,22 @@ class ParticleFilter(InferenceModule):
         emissionModel = busters.getObservationDistribution(noisyDistance)
         pacmanPosition = gameState.getPacmanPosition()
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        #util.raiseNotDefined()
+        if noisyDistance == None:
+            self.samples = [self.getJailPosition()] * self.numParticles
+            return
+        oldBeliefs = self.getBeliefDistribution()
+        newSamples = util.Counter()
+
+        for p in oldBeliefs:
+            trueDistance = util.manhattanDistance(p, pacmanPosition)
+            newSamples[p] += oldBeliefs[p] * emissionModel[trueDistance]
+
+        if newSamples.totalCount() == 0:
+            for p in self.legalPositions: newSamples[p] = 1.0
+
+        newSamples.normalize()
+        self.samples = [util.sample(newSamples, self.legalPositions) for i in range(self.numParticles) ]
 
     def elapseTime(self, gameState):
         """
@@ -331,7 +350,15 @@ class ParticleFilter(InferenceModule):
         Counter object)
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        #util.raiseNotDefined()
+        beliefs = util.Counter()
+        for pos in self.legalPositions:
+            beliefs[pos] = 0.0
+        for pos in self.samples:
+            beliefs[pos] += 1.0
+
+        beliefs.normalize()
+        return beliefs
 
 class MarginalInference(InferenceModule):
     """
