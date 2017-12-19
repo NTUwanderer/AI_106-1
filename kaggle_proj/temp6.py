@@ -20,9 +20,7 @@ np.random.seed(2)
 def getValue(x):
     return x[-1]
 data = np.array(sorted(data, key=getValue))
-print ('shape0: ', data.shape)
 counts = int(sum(data[:, -1]))
-print ('counts: ', counts)
 
 zeros = data[:-counts]
 ones = data[-counts:]
@@ -34,8 +32,6 @@ vo_split = int(counts / 4)
 vz_split = 5000 - vo_split
 data = np.concatenate((zeros[:-vz_split], ones[:-vo_split]))
 validation = np.concatenate((zeros[-vz_split:], ones[-vo_split:]))
-
-print ('shapes: ', data.shape, validation.shape)
 
 np.random.shuffle(data)
 np.random.shuffle(validation)
@@ -49,9 +45,11 @@ weight = np.array(data_y, copy=True)
 
 for i in range(len(weight)):
     if weight[i] == 1:
-        weight[i] = math.sqrt(20000 - counts)
+        # weight[i] = math.sqrt(20000 - counts)
+        weight[i] = 1
     else:
-        weight[i] = math.sqrt(counts)
+        # weight[i] = math.sqrt(counts)
+        weight[i] = 2
 
 vx = validation[:, :-1]
 vy = validation[:, -1]
@@ -59,7 +57,7 @@ vy = vy.astype(int)
 
 
 # read in data
-model = XGBClassifier(max_depth=3, n_estimators=100, objective='rank:pairwise')
+model = XGBClassifier(max_depth=3, n_estimators=100, objective='binary:logistic')
 # model = XGBRegressor(objective='rank:pairwise')
 
 def myMap500(p, y):
@@ -78,9 +76,26 @@ def myMap500(p, y):
 
     return 'mymap500', total / 500
 
-model.fit(data_x, data_y, eval_set=[(vx, vy)], eval_metric=myMap500, verbose=True)
+model.fit(data_x, data_y, sample_weight=weight, eval_set=[(vx, vy)], eval_metric=myMap500, verbose=True)
 pred = model.predict_proba(vx)
 pred = pred[:, 1]
+
+def myMap(p, y, k=500):
+    rank = np.argsort(1 - p)
+    values = [0] * k
+    for i in range(k):
+        values[i] = y[rank[i]]
+
+    total = 0.0
+    run_sum = 0.0
+
+    for i in range(k):
+        run_sum += values[i]
+        total += run_sum / (i + 1)
+
+    return total / k
+
+print ('myMap 100, 500: ', myMap(pred, vy, 50), myMap(pred, vy))
 
 data_t = np.genfromtxt('Test_Public.csv', delimiter=',', skip_header=1)
 
