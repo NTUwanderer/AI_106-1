@@ -1,28 +1,16 @@
-from xgboost import XGBClassifier
+from xgboost import Booster, XGBClassifier
 
 import numpy as np
-import keras
-from keras.models import Sequential
-from keras.layers import Dense, Activation
 from keras.utils import normalize
 from sklearn.metrics import accuracy_score
-from keras.models import load_model
 
 import sys
 
-data = np.genfromtxt('train.csv', delimiter=',', skip_header=1)
-np.random.seed(1)
-np.random.shuffle(data)
-data_x = data[:, 1:24]
-data_y = data[:, 24]
-data_y = data_y.astype(int)
-# read in data
-# model = XGBClassifier(max_depth=5, objective='rank:pairwise')
 model = XGBClassifier(seed=1, max_depth=5, objective='rank:pairwise')
 
-model.fit(data_x, data_y)
-pred = model.predict(data_x)
-print ('acc: ', accuracy_score(data_y, pred))
+booster = Booster()
+booster.load_model('myModel')
+model._Booster = booster
 
 def generateOutput(inputFile, outputFile):
 
