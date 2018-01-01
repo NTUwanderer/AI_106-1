@@ -57,4 +57,13 @@ class PerceptronClassifierPacman(PerceptronClassifier):
             print "Starting iteration ", iteration, "..."
             for i in range(len(trainingData)):
                 "*** YOUR CODE HERE ***"
-                util.raiseNotDefined()
+                vectors = util.Counter()
+                datum, legalMoves = trainingData[i]
+                for l in legalMoves:
+                    vectors[l] = self.weights * datum[l] #changed from datum to datum[l]
+                move = vectors.argMax()
+
+                if move != trainingLabels[i]:
+                    self.weights -= datum[move]
+                    self.weights += datum[trainingLabels[i]]
+
