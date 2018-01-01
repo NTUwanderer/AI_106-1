@@ -262,7 +262,78 @@ def enhancedPacmanFeatures(state, action):
     """
     features = util.Counter()
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    nextState = state.generatePacmanSuccessor(action)
+    def generateFeatures(state, features, prefix):
+        cPos = state.getPacmanPosition()
+        cFood = state.getFood()
+        cCapsules = state.getCapsules()
+        ghostStates = state.getGhostStates()
+        scaredTimes = [ghostState.scaredTimer for ghostState in ghostStates]
+        width = cFood.width
+        height = cFood.height
+        safeDis = min(min(3, width - 2), height - 2)
+        maxLength = width + height - 4
+
+        trueDis = [[maxLength for x in range(height)] for y in range(width)] 
+
+        trueDis[cPos[0]][cPos[1]] = 0
+
+        oldList = [cPos]
+        newList = []
+        
+        counter = 1
+        while len(oldList) > 0:
+            for pos1 in oldList:
+                cands = [(pos1[0]-1, pos1[1]), (pos1[0]+1, pos1[1]), (pos1[0], pos1[1]-1), (pos1[0], pos1[1]+1)]
+                for cand in cands:
+                    if not (state.hasWall(cand[0], cand[1])) and counter < trueDis[cand[0]][cand[1]]:
+                        newList.append(cand)
+                        trueDis[cand[0]][cand[1]] = counter
+
+
+            counter += 1
+            oldList = newList
+            newList = []
+
+
+        temp = maxLength
+        for i in range(len(ghostStates)):
+            pos = ghostStates[i].getPosition()
+            x = int(pos[0])
+            y = int(pos[1])
+            dis = trueDis[x][y]
+
+            # if scaredTimes[i] <= 2 * dis and temp > dis:
+            temp = dis
+
+        dangerousDis = max(0, safeDis - temp)
+
+        features[prefix + 'nearest ghost'] = temp
+        features[prefix + 'dangerousDis'] = dangerousDis
+        
+        minDis = maxLength
+        minDis2 = maxLength
+        for food in cFood.asList():
+            dis = trueDis[food[0]][food[1]]
+            if (dis < minDis):
+                minDis2 = minDis
+                minDis = dis
+
+        features[prefix + 'minDis'] = minDis
+        features[prefix + 'minDis2'] = minDis2
+
+        minDis = maxLength
+        for capsule in cCapsules:
+            dis = trueDis[capsule[0]][capsule[1]]
+            if (dis < minDis):
+                minDis = dis
+        features[prefix + 'minDis to Capsule'] = minDis
+
+    generateFeatures(state, features, 'current')
+    generateFeatures(nextState, features, 'next')
+
+    features['next score'] = nextState.getScore()
+
     return features
 
 
