@@ -81,7 +81,137 @@ def enhancedFeatureExtractorDigit(datum):
     features =  basicFeatureExtractorDigit(datum)
 
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+
+    # features = util.Counter()
+
+    checked = []
+    checked2 = []
+    for x in range(DIGIT_DATUM_WIDTH):
+        checked.append([False] * DIGIT_DATUM_HEIGHT)
+        checked2.append([False] * DIGIT_DATUM_HEIGHT)
+
+    pixels = util.Counter()
+    for x in range(DIGIT_DATUM_WIDTH):
+        for y in range(DIGIT_DATUM_HEIGHT):
+            pixel = datum.getPixel(x, y)
+            pixels[pixel] += 1
+
+            if pixel > 0:
+                checked[x][y] = True
+            if pixel == 2:
+                checked2[x][y] = True
+
+    countSep = 0
+    countSepShallow = 0
+
+    # print 'image:'
+    # for x in range(DIGIT_DATUM_WIDTH):
+    #     s = ''
+    #     for y in range(DIGIT_DATUM_HEIGHT):
+    #         pixel = datum.getPixel(x, y)
+    #         a = ' '
+    #         if pixel == 1:
+    #             a = '+'
+    #         elif pixel == 2:
+    #             a = '#'
+    #         s += a
+
+    #     print s
+
+    def findNotChecked(checked):
+        for x in range(DIGIT_DATUM_WIDTH):
+            for y in range(DIGIT_DATUM_HEIGHT):
+                if checked[x][y] == False:
+                    return (x, y)
+
+        return (-1, -1)
+
+    def getNeighbors(x, y):
+        tempList = [(x-1, y), (x+1, y), (x, y-1), (x, y+1), (x-1, y-1), (x-1, y+1), (x+1, y-1), (x+1, y+1)]
+        finalList = []
+        for pos in tempList:
+            xx, yy = pos
+            if xx >= 0 and xx < DIGIT_DATUM_WIDTH and yy >= 0 and yy < DIGIT_DATUM_HEIGHT:
+                finalList.append(pos)
+
+        return finalList
+
+    def isMargin(x, y):
+        return x == 0 or y == 0 or x == DIGIT_DATUM_WIDTH - 1 or y == DIGIT_DATUM_HEIGHT - 1
+
+    while True:
+        x0, y0 = findNotChecked(checked)
+        if x0 == -1:
+            break
+
+        thisCheck = []
+        for x in range(DIGIT_DATUM_WIDTH):
+            thisCheck.append(['0'] * DIGIT_DATUM_HEIGHT)
+
+        margin = False
+
+        toCheck = [(x0, y0)]
+        checked[x0][y0] = True
+
+        while len(toCheck) > 0:
+            x, y = toCheck.pop(0)
+            if isMargin(x, y):
+                margin = True
+            thisCheck[x][y] = '1'
+            for pos in getNeighbors(x, y):
+                if checked[pos[0]][pos[1]] == False:
+                    toCheck.append(pos)
+                    checked[pos[0]][pos[1]] = True
+
+        if margin == False:
+            countSep += 1
+
+    # while True:
+    #     x0, y0 = findNotChecked(checked2)
+    #     if x0 == -1:
+    #         break
+
+    #     thisCheck = []
+    #     for x in range(DIGIT_DATUM_WIDTH):
+    #         thisCheck.append(['0'] * DIGIT_DATUM_HEIGHT)
+
+    #     margin = False
+
+    #     toCheck = [(x0, y0)]
+    #     checked2[x0][y0] = True
+
+    #     while len(toCheck) > 0:
+    #         x, y = toCheck.pop(0)
+    #         if isMargin(x, y):
+    #             margin = True
+    #         thisCheck[x][y] = '1'
+    #         for pos in getNeighbors(x, y):
+    #             if checked2[pos[0]][pos[1]] == False:
+    #                 toCheck.append(pos)
+    #                 checked2[pos[0]][pos[1]] = True
+
+    #     if margin == False:
+    #         countSepShallow += 1
+
+    # for x in range(DIGIT_DATUM_WIDTH - 1):
+    #     for y in range(DIGIT_DATUM_HEIGHT - 1):
+    #         if x % 2 == 0 and y % 2 == 0:
+    #             count = 0
+    #             count += datum.getPixel(x, y)
+    #             count += datum.getPixel(x+1, y)
+    #             count += datum.getPixel(x, y+1)
+    #             count += datum.getPixel(x+1, y+1)
+
+    #             newPixel = 0
+    #             if count > 0 and count < 4:
+    #                 newPixel = 1
+    #             elif count >= 4:
+    #                 newPixel = 2
+
+    #             features[(x, y, 0)] = newPixel
+            
+    features['countSep'] = countSep
+    # features['countSep2'] = countSepShallow
 
     return features
 
