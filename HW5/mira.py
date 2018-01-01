@@ -68,7 +68,51 @@ class MiraClassifier:
         ## Cgrid: a list of constant C
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+
+        def proportion(w, tau):
+            newW = w.copy()
+            for f in w:
+                newW[f] *= tau
+
+            return newW
+
+        orig_weights = self.weights.copy()
+        best_weights = {}
+        best_val = -1.0
+        best_index = -1
+
+        Cgrid = sorted(Cgrid)
+        for index, c in enumerate(Cgrid):
+            self.weights = orig_weights.copy()
+            for iteration in range(self.max_iterations):
+                for i in range(len(trainingData)):
+                    vectors = util.Counter()
+                    for l in self.legalLabels:
+                        vectors[l] = self.weights[l] * trainingData[i]
+                    guess = vectors.argMax()
+
+                    tau = min(c, float(((self.weights[guess] - self.weights[trainingLabels[i]]) * trainingData[i]) + 1) / (2 * (trainingData[i] * trainingData[i])))
+
+                    if guess != trainingLabels[i]:
+                        w = proportion(trainingData[i], tau)
+                        self.weights[guess] -= w
+                        self.weights[trainingLabels[i]] += w
+
+            guesses = self.classify(validationData)
+            count = 0
+            for i, g in enumerate(guesses):
+                if g == validationLabels[i]:
+                    count += 1
+
+            val = float(count) / len(guesses)
+            if val > best_val:
+                best_index = index
+                best_val = val
+                best_weights = self.weights.copy()
+
+        self.weights = best_weights.copy()
+
+        return Cgrid[best_index]
 
     def classify(self, data ):
         """
