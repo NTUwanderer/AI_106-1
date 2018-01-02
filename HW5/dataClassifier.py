@@ -84,9 +84,11 @@ def enhancedFeatureExtractorDigit(datum):
 
     # features = util.Counter()
 
+    hole = []
     checked = []
     checked2 = []
     for x in range(DIGIT_DATUM_WIDTH):
+        hole.append([0] * DIGIT_DATUM_HEIGHT)
         checked.append([False] * DIGIT_DATUM_HEIGHT)
         checked2.append([False] * DIGIT_DATUM_HEIGHT)
 
@@ -139,6 +141,7 @@ def enhancedFeatureExtractorDigit(datum):
     def isMargin(x, y):
         return x == 0 or y == 0 or x == DIGIT_DATUM_WIDTH - 1 or y == DIGIT_DATUM_HEIGHT - 1
 
+    holeArea = 0
     while True:
         x0, y0 = findNotChecked(checked)
         if x0 == -1:
@@ -152,9 +155,14 @@ def enhancedFeatureExtractorDigit(datum):
 
         toCheck = [(x0, y0)]
         checked[x0][y0] = True
+        area = 0
+        
+        poss = []
 
         while len(toCheck) > 0:
             x, y = toCheck.pop(0)
+            poss.append((x, y))
+            area += 1
             if isMargin(x, y):
                 margin = True
             thisCheck[x][y] = '1'
@@ -165,7 +173,14 @@ def enhancedFeatureExtractorDigit(datum):
 
         if margin == False:
             countSep += 1
+            holeArea += area
 
+            for x, y in poss:
+                hole[x][y] = 1
+
+    for x in range(DIGIT_DATUM_WIDTH):
+        for y in range(DIGIT_DATUM_HEIGHT):
+            features[(x, y, 'hole')] = hole[x][y]
     # while True:
     #     x0, y0 = findNotChecked(checked2)
     #     if x0 == -1:
@@ -193,24 +208,26 @@ def enhancedFeatureExtractorDigit(datum):
     #     if margin == False:
     #         countSepShallow += 1
 
-    # for x in range(DIGIT_DATUM_WIDTH - 1):
-    #     for y in range(DIGIT_DATUM_HEIGHT - 1):
-    #         if x % 2 == 0 and y % 2 == 0:
-    #             count = 0
-    #             count += datum.getPixel(x, y)
-    #             count += datum.getPixel(x+1, y)
-    #             count += datum.getPixel(x, y+1)
-    #             count += datum.getPixel(x+1, y+1)
+    # bunchLength = 3
+    # for x in range(DIGIT_DATUM_WIDTH - bunchLength + 1):
+    #     for y in range(DIGIT_DATUM_HEIGHT - bunchLength + 1):
+    #         newPixel = 0
+    #         maxPixel = 0
+    #         # if x % bunchLength != 0 or y % bunchLength != 0:
+    #         #     continue
+    #         
+    #         for xx in range(0, bunchLength):
+    #             for yy in range(0, bunchLength):
+    #                 pixel = datum.getPixel(x + xx, y + yy)
+    #                 newPixel += pixel
+    #                 maxPixel = max(maxPixel, pixel)
 
-    #             newPixel = 0
-    #             if count > 0 and count < 4:
-    #                 newPixel = 1
-    #             elif count >= 4:
-    #                 newPixel = 2
 
-    #             features[(x, y, 0)] = newPixel
+    #         # features[(x, y, 'sum')] = newPixel
+    #         features[(x, y, 'max')] = maxPixel
             
     features['countSep'] = countSep
+    # features['holeArea'] = holeArea
     # features['countSep2'] = countSepShallow
 
     return features
