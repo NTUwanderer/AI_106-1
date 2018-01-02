@@ -325,7 +325,7 @@ def enhancedPacmanFeatures(state, action):
 
         dangerousDis = max(0, safeDis - temp)
 
-        features[prefix + 'nearest ghost'] = temp
+        features[prefix + 'nearest ghost'] = temp * 4
         features[prefix + 'dangerousDis'] = dangerousDis
         
         minDis = maxLength
@@ -336,6 +336,8 @@ def enhancedPacmanFeatures(state, action):
                 minDis2 = minDis
                 minDis = dis
 
+        # features[prefix + 'minDis'] = float(maxLength - minDis) / maxLength
+        # features[prefix + 'minDis2'] = float(maxLength - minDis2) / 2 / maxLength
         features[prefix + 'minDis'] = minDis
         features[prefix + 'minDis2'] = minDis2
 
@@ -344,12 +346,14 @@ def enhancedPacmanFeatures(state, action):
             dis = trueDis[capsule[0]][capsule[1]]
             if (dis < minDis):
                 minDis = dis
+        # features[prefix + 'minDis to Capsule'] = float(maxLength - minDis) / maxLength
         features[prefix + 'minDis to Capsule'] = minDis
 
     generateFeatures(state, features, 'current')
     generateFeatures(nextState, features, 'next')
 
     features['next score'] = nextState.getScore()
+    # features['delta score'] = (nextState.getScore() - state.getScore()) * 10
 
     return features
 
